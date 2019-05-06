@@ -37,8 +37,13 @@ namespaces.forEach(namespace => {
         numberOfUsersCallback(clients.length);
       });
 
-      const nsRoom = namespace.rooms.find(room => room.title === roomToJoin);
+      const nsRoom = namespace.rooms.find(room => room.roomTitle === roomToJoin);
       nsSocket.emit('historyCatchUp', nsRoom.history);
+
+      // Send back the number of users in this room to ALL sockets connected to this room
+      io.of('/wiki').in(roomToJoin).clients((error, clients) => {
+        io.of('/wiki').in(roomToJoin).emit('updateMembers', clients.length);
+      });
     });
 
     nsSocket.on('newMessageToServer', msg => {
@@ -55,7 +60,7 @@ namespaces.forEach(namespace => {
       // joins its own room on connection.
       const roomTitle = Object.keys(nsSocket.rooms)[1];
       // We need to find the Room object for this room
-      const nsRoom = namespace.rooms.find(room => room.title === roomTitle);
+      const nsRoom = namespace.rooms.find(room => room.roomTitle === roomTitle);
       nsRoom.addMessage(fullMsg);
       io.of('/wiki').to(roomTitle).emit('messageToClients', fullMsg);
     });
