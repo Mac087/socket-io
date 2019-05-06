@@ -1,4 +1,9 @@
-const socket = io('http://localhost:9000');
+// const socket = io('http://localhost:9000');
+const socket = io('http://localhost:9000', {
+  query: {
+    username: "rbunch"
+  }
+});
 let nsSocket = "";
 
 // Listen for nsList, which is a list of all the namespaces.

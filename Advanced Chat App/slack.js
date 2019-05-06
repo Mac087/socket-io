@@ -25,13 +25,17 @@ io.on('connection', socket => { //io.on === io.of('/').on
 // loop through each namespace and listen for a connection
 namespaces.forEach(namespace => {
   io.of(namespace.endpoint).on('connection', nsSocket => {
-    console.log(`${nsSocket.id} has join ${namespace.endpoint}`);
+    // console.log(`${nsSocket.id} has join ${namespace.endpoint}`);
 
     // A socket has connected to one of our chatgroup namespaces.
     // send that ns group info back
     nsSocket.emit('nsRoomLoad', namespace.rooms);
     nsSocket.on('joinRoom', (roomToJoin, numberOfUsersCallback) => {
       // deal with history...once we have it
+      const roomToLeave = Object.keys(nsSocket.rooms)[1];
+      nsSocket.leave(roomToLeave);
+      // We need to update number of users in the room we left
+      updateUsersInRoom(namespace, roomToLeave)
       nsSocket.join(roomToJoin);
       io.of(namespace.endpoint).in(roomToJoin).clients((error, clients) => {
         numberOfUsersCallback(clients.length);
@@ -41,9 +45,7 @@ namespaces.forEach(namespace => {
       nsSocket.emit('historyCatchUp', nsRoom.history);
 
       // Send back the number of users in this room to ALL sockets connected to this room
-      io.of(namespace.endpoint).in(roomToJoin).clients((error, clients) => {
-        io.of(namespace.endpoint).in(roomToJoin).emit('updateMembers', clients.length);
-      });
+      updateUsersInRoom(namespace, roomToJoin)
     });
 
     nsSocket.on('newMessageToServer', msg => {
@@ -66,3 +68,9 @@ namespaces.forEach(namespace => {
     });
   });
 });
+
+function updateUsersInRoom(namespace, roomToJoin) {
+  io.of(namespace.endpoint).in(roomToJoin).clients((error, clients) => {
+    io.of(namespace.endpoint).in(roomToJoin).emit('updateMembers', clients.length);
+  });
+}
