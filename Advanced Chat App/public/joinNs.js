@@ -1,4 +1,10 @@
 function joinNs(endpoint) {
+  if (nsSocket) {
+    // if nsScocket is an actua lsocket we are going to close before re assigning the variable
+    nsSocket.close();
+    // To avoid repeating messages we need to remove the eventListener before it's added again
+    document.querySelector('#user-input').removeEventListener('submit', formSubmission);
+  }
   nsSocket = io(`http://localhost:9000${endpoint}`);
   nsSocket.on('nsRoomLoad', nsRooms => {
     let roomList = document.querySelector('.room-list');
@@ -25,12 +31,14 @@ function joinNs(endpoint) {
     document.querySelector('#messages').innerHTML += newMsg;
   });
 
-  document.querySelector('.message-form').addEventListener('submit', event => {
-    event.preventDefault();
-    const newMessage = document.querySelector('#user-message').value;
-    nsSocket.emit('newMessageToServer', { text: newMessage });
-  });
+  document.querySelector('.message-form').addEventListener('submit', formSubmission);
 
+}
+
+function formSubmission(event) {
+  event.preventDefault();
+  const newMessage = document.querySelector('#user-message').value;
+  nsSocket.emit('newMessageToServer', { text: newMessage });
 }
 
 function buildHTML(msg) {
